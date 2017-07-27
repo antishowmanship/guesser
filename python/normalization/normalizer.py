@@ -1,3 +1,14 @@
+import re
+
+NUMBERS_RE = re.compile("\d+")
+
+def arena_section_name_stripper(canonical_section_name):
+    numbers = NUMBERS_RE.findall(canonical_section_name)
+    if len(numbers) <> 1:
+        return None
+    else:
+        return numbers[0]
+
 
 class Normalizer(object):
 
@@ -37,3 +48,4 @@ class Normalizer(object):
 
         ## your code goes here
         return (None, None, False)
+
