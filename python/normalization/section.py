@@ -3,7 +3,8 @@ class Section(object):
 
     def __init__(self, section_name, section_id, name_normalize_func=None):
         self.exact_name = section_name
-        self.clean_name = name_normalize_func(section_name) if name_normalize_func else section_name
+        self.num_name = name_normalize_func(section_name) if name_normalize_func else section_name
+        self.name_alpha_tokens = tokenize(section_name)
         self.id = int(section_id) if section_id else None
         self.has_rows = False
         self.rows = {}
