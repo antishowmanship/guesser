@@ -1,7 +1,6 @@
 import re
 import csv
 from section import Section
-from normalizer import arena_section_name_stripper
 
 NUMBERS_RE = re.compile("\d+")
 SECTION_ID = 'section_id'
@@ -20,7 +19,8 @@ def arena_section_name_stripper(canonical_section_name):
 class Normalizer(object):
 
     def __init__(self):
-        self.sections = {}
+        self.sections_full = {}
+        self.sections_cleaned = {}
 
     def read_manifest(self, manifest):
         """reads a manifest file
@@ -37,20 +37,23 @@ class Normalizer(object):
 
         ## your code goes here
         with open(manifest, 'r') as manifest_file:
-            manifest_reader = csv.reader(manifest_file)
+            manifest_reader = csv.DictReader(manifest_file)
 
             for line in manifest_reader:
                 section_name = line[SECTION_NAME].lower()
+                section_name_cleaned = arena_section_name_stripper(section_name)
                 section_id = int(line[SECTION_ID]) if line[SECTION_ID] else None
                 row_name = line[ROW_NAME].lower()
                 row_id = int(line[ROW_ID]) if line[ROW_ID] else None
-                if section_name in self.sections and row_name:
-                    section = self.sections[section_name]
+                if section_name in self.sections_full and row_name:
+                    section = self.sections_full[section_name]
                     section.add_row(row_name, row_id)
                 else:
                     section = Section(section_name, section_id, arena_section_name_stripper)
                     if row_name:
                         section.add_row(row_name, row_id)
+                    self.sections_full[section_name] = section
+                    self.sections_cleaned[section_name_cleaned] = section
 
 
     def normalize(self, section_name, row_name=''):
@@ -70,12 +73,16 @@ class Normalizer(object):
         ## your code goes here
         section_name = section_name.lower().strip() if section_name else None
         row_name = row_name.lower().strip() if row_name else None
+        print "section_name: " + section_name
+        print "row_name: " + row_name
         section = None
-        if section_name in self.sections:
-            section = self.sections[section_name]
+        if section_name in self.sections_full:
+            section = self.sections_full[section_name]
         else:
             clean_name = arena_section_name_stripper(section_name)
-            section = next(potential_section for potential_section in self.sections.values() if potential_section.clean_name == clean_name)
+            print "clean_name: " + clean_name
+            section = self.sections_cleaned[clean_name]
+            #section = next((potential_section for potential_section in self.sections.values() if potential_section.clean_name == clean_name), None)
 
         if not section:
             return None, None, False
