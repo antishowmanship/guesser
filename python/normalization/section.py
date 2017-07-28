@@ -1,3 +1,5 @@
+from normalizer import tokenize
+
 
 class Section(object):
 
