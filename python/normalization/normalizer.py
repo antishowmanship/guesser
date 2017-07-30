@@ -1,53 +1,20 @@
-import re
 import csv
-from string import digits
+
 from section import Section
+from util import abbreviate, tokenize, arena_section_name_stripper, fuzzy_section_chooser
 
-
-NUMBERS_RE = re.compile("\d+")
 SECTION_ID = 'section_id'
 SECTION_NAME = 'section_name'
 ROW_ID = 'row_id'
 ROW_NAME = 'row_name'
-
-def tokenize(section_name):
-    if not section_name:
-        return None
-    token_list = [word.translate(None, digits) for word in section_name.split() if word.translate(None, digits)]
-    if len(token_list) > 0:
-        return token_list
-    return None
-
-
-def arena_section_name_stripper(canonical_section_name):
-    numbers = NUMBERS_RE.findall(canonical_section_name)
-    if len(numbers) <> 1:
-        return None
-    else:
-        return numbers[0]
-
-
-def fuzzy_section_chooser(tokens, sections):
-    scored_sections = []
-    for section in sections:
-        score = 0
-        for token in tokens:
-            if token in section.name_alpha_tokens:
-                score += 1
-        if score > 0:
-            scored_sections.add((section, score))
-    sorted(scored_sections, key=lambda x: x[1])
-    if len(scored_sections) > 0:
-        return scored_sections[0]
-    return None
-
 
 
 class Normalizer(object):
 
     def __init__(self):
         self.sections_full = {}
-        self.section_broad = {}
+        self.sections_broad = {}
+        self.sections_abbrev = {}
 
     def read_manifest(self, manifest):
         """reads a manifest file
@@ -77,13 +44,24 @@ class Normalizer(object):
                     section.add_row(row_name, row_id)
                 else:
                     section = Section(section_name, section_id, arena_section_name_stripper)
+                    if section_name == "315":
+                        print "! row_name: " + row_name
                     if row_name:
                         section.add_row(row_name, row_id)
+                        if section_name == "315":
+                            print row_name
+                            print row_id
+                            print section.rows
                     self.sections_full[section_name] = section
                     if section_name_cleaned in self.sections_broad:
-                        self.section_broad[section_name_cleaned].add(section)
+                        self.sections_broad[section_name_cleaned].add(section)
                     else:
-                        self.section_broad[section_name_cleaned] = [section]
+                        self.sections_broad[section_name_cleaned] = [section]
+                    self.sections_abbrev[(section.name_abbrev, section_name_cleaned)] = section
+                    if section.name_abbrev in self.sections_abbrev:
+                        print "NON-UNIQUE SECTION ABBREVIATION!!!!!"
+                        print section.exact_name + ", " + section.name_abbrev
+                        print self.sections_abbrev[(section_name_cleaned, section.name_abbrev)].exact_name
 
 
     def normalize(self, section_name, row_name=''):
@@ -111,12 +89,23 @@ class Normalizer(object):
         else:
             clean_name = arena_section_name_stripper(section_name)
             print "clean_name: " + clean_name
-            sections = self.sections_cleaned[clean_name]
+            sections = self.sections_broad[clean_name]
             if len(sections) == 1:
                 section = sections[0]
             else:
                 section = fuzzy_section_chooser(tokenize(section_name), sections)
+
+            if not section:
+                abbrev_name = abbreviate(tokenize(section_name))
+                if (abbrev_name, clean_name) in self.sections_abbrev:
+                    section = self.sections_abbrev[abbrev_name]
             #section = next((potential_section for potential_section in self.sections.values() if potential_section.clean_name == clean_name), None)
+
+        if section:
+            print "Section name: " + section.exact_name
+            if section.rows:
+                for row_name, row_id in section.rows.items():
+                    print "row name: " + row_name + ", row_id: " + str(row_id)
 
         if not section:
             return None, None, False
