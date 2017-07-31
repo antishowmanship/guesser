@@ -3,6 +3,7 @@ from normalizer import Normalizer
 import csv
 import json
 
+
 def tobool(s):
     """helper method to parse bools"""
     try:
@@ -17,6 +18,7 @@ def tobool(s):
     else:
         raise ValueError("cannot find bool")
 
+
 def toint(s):
     try:
         return int(s)
@@ -24,6 +26,7 @@ def toint(s):
         if not s:
             return None
         raise ValueError("cannot convert to int")
+
 
 def read_input(input_path):
     samples = []
@@ -37,6 +40,7 @@ def read_input(input_path):
             samples.append(sample)
     return samples
 
+
 def normalize_samples(normalizer, samples, verbose=False):
     matched = []
     for sample in samples:
@@ -44,6 +48,7 @@ def normalize_samples(normalizer, samples, verbose=False):
         sample["output"] = {"section_id" : sid, "row_id" : rid, "valid" : valid}
         matched.append(sample)
     return matched
+
 
 def output_samples(matched):
     """print this to the command line in json format
