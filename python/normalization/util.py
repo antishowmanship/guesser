@@ -3,6 +3,7 @@ from string import digits
 
 
 NUMBERS_RE = re.compile("\d+")
+STADIUM_REPLACEMENTS = {'fd': 'field'}
 
 
 def abbreviate(word_list):
@@ -18,16 +19,23 @@ def abbreviate(word_list):
         return None
 
 
-def tokenize(section_name):
+def tokenize(section_name, replacements = {}):
     """
     Provided a string with zero or more words separated by spaces, convert
     to a list of word strings, while stripping out all numerical characters
     :param section_name: string, presumably representing a section name
+    :param replacements: map of tokens which, if found in section_name,
+    should be replaced: key is token to be replace, val is replacement.  This seems
+    dangerous so should probably be used on a per-venue basis
     :return: list of strings of all words in section_name, without numerals
     """
     if not section_name:
         return None
-    token_list = [word.translate(None, digits) for word in section_name.split() if word.translate(None, digits)]
+    token_list = [word.translate(None, digits).lower() for word in section_name.split() if word.translate(None, digits)]
+    if replacements and token_list:
+        for index, token in enumerate(token_list):
+            if token in replacements:
+                token_list[index] = replacements[token]
     if len(token_list) > 0:
         return token_list
     return None
